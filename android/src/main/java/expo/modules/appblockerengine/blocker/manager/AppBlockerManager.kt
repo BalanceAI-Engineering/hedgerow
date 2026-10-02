@@ -34,7 +34,8 @@ class AppBlockerManager private constructor(private val context: Context) {
         val state = BlockerState(
             isBlocking = true,
             blockedApps = apps ?: emptyList(),
-            blockAll = apps == null || apps.isEmpty(),
+            // Only an explicit null blocks everything; an emptied selection blocks nothing.
+            blockAll = apps == null,
             scheduledTime = currentState.scheduledTime,
             scheduledAtMillis = currentState.scheduledAtMillis,
             scheduleActivated = currentState.scheduleActivated,
