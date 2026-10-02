@@ -133,7 +133,7 @@ class AppBlockerManager private constructor(private val context: Context) {
     }
     
     fun getInstalledApps(): List<String> {
-        return appMonitor.getInstalledApps(includeSystemApps = false)
+        return appMonitor.getInstalledApps()
     }
     
     fun getAppName(packageName: String): String {

@@ -320,7 +320,7 @@ export default function App() {
 | `hasOverlayPermission()` | - | Check overlay permission |
 | `requestUsageStatsPermission()` | - | Open usage access settings |
 | `requestOverlayPermission()` | - | Open overlay settings |
-| `getInstalledApps()` | - | Get list of non-system apps |
+| `getInstalledApps()` | - | Get the package names of launchable apps, excluding this one |
 | `getAppName(package)` | `string` | Get app name from package |
 | `getAppIcon(package)` | `string` | Get app icon as base64 |
 | `getUsageStats()` | - | Get today's app usage stats |

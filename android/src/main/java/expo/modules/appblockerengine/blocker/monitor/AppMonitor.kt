@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -66,18 +67,22 @@ class AppMonitor(private val context: Context) {
         return recentStats?.packageName
     }
     
-    fun getInstalledApps(includeSystemApps: Boolean = false): List<String> {
-        val installedApps: List<ApplicationInfo> = packageManager.getInstalledApplications(PackageManager.GET_META_DATA).toList()
-        
-        return installedApps
-            .filter { appInfo: ApplicationInfo ->
-                if (includeSystemApps) {
-                    true
-                } else {
-                    !isSystemApp(appInfo)
-                }
-            }
-            .map { appInfo: ApplicationInfo -> appInfo.packageName }
+    // Launchable apps only, visible through the plugin's MAIN/LAUNCHER <queries>
+    // entry. Preinstalled apps such as YouTube carry FLAG_SYSTEM on many
+    // devices, so filtering on it would hide the apps people most want to lock.
+    fun getInstalledApps(): List<String> {
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.queryIntentActivities(launcherIntent, PackageManager.ResolveInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(launcherIntent, 0)
+        }
+
+        return activities
+            .map { it.activityInfo.packageName }
+            .filter { it != context.packageName }
+            .distinct()
     }
     
     fun isSystemApp(appInfo: ApplicationInfo): Boolean {
