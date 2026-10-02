@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import expo.modules.appblockerengine.blocker.model.BlockerState
 import expo.modules.appblockerengine.blocker.model.OverlayConfig
 import org.json.JSONObject
+import java.io.File
 
 class PreferencesManager(context: Context) {
     
@@ -13,8 +14,20 @@ class PreferencesManager(context: Context) {
         Context.MODE_PRIVATE
     )
     
+    // Blocking is per device. Auto Backup copies these prefs to a new phone but
+    // never noBackupFilesDir, so prefs without the marker were restored, not
+    // written here: drop them rather than lock apps the user never picked there.
+    init {
+        val deviceMarker = File(context.noBackupFilesDir, DEVICE_MARKER_FILE)
+        if (!deviceMarker.exists()) {
+            if (prefs.all.isNotEmpty()) prefs.edit().clear().commit()
+            deviceMarker.createNewFile()
+        }
+    }
+    
     companion object {
         private const val PREFS_NAME = "app_blocker_prefs"
+        private const val DEVICE_MARKER_FILE = "app_blocker_device"
         private const val KEY_IS_BLOCKING = "is_blocking"
         private const val KEY_BLOCKED_APPS = "blocked_apps"
         private const val KEY_BLOCK_ALL = "block_all"
