@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -11,6 +12,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.provider.Settings
+import android.telecom.TelecomManager
 import android.util.Base64
 import expo.modules.appblockerengine.blocker.model.AppUsageStats
 import java.io.ByteArrayOutputStream
@@ -66,18 +68,22 @@ class AppMonitor(private val context: Context) {
         return recentStats?.packageName
     }
     
-    fun getInstalledApps(includeSystemApps: Boolean = false): List<String> {
-        val installedApps: List<ApplicationInfo> = packageManager.getInstalledApplications(PackageManager.GET_META_DATA).toList()
-        
-        return installedApps
-            .filter { appInfo: ApplicationInfo ->
-                if (includeSystemApps) {
-                    true
-                } else {
-                    !isSystemApp(appInfo)
-                }
-            }
-            .map { appInfo: ApplicationInfo -> appInfo.packageName }
+    // Launchable apps only, visible through the plugin's MAIN/LAUNCHER <queries>
+    // entry. Preinstalled apps such as YouTube carry FLAG_SYSTEM on many
+    // devices, so filtering on it would hide the apps people most want to lock.
+    fun getInstalledApps(): List<String> {
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.queryIntentActivities(launcherIntent, PackageManager.ResolveInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(launcherIntent, 0)
+        }
+
+        return activities
+            .map { it.activityInfo.packageName }
+            .filter { it != context.packageName }
+            .distinct()
     }
     
     fun isSystemApp(appInfo: ApplicationInfo): Boolean {
@@ -140,14 +146,36 @@ class AppMonitor(private val context: Context) {
         }
         
         if (blockedApps.contains(packageName)) {
-            return true
+            return !isProtectedPackage(packageName)
         }
         
         if (blockAll) {
-            return !isSystemAppByName(packageName)
+            return !isSystemAppByName(packageName) && !isProtectedPackage(packageName)
         }
         
         return false
+    }
+    
+    // Locking any of these would strand the user: no calls, no way to revoke the
+    // permissions, no home screen. Resolved only for an app that would otherwise
+    // be blocked, so the once-a-second poll rarely pays for it.
+    private fun isProtectedPackage(packageName: String): Boolean {
+        val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
+        if (telecomManager?.defaultDialerPackage == packageName) return true
+
+        val protectedIntents = listOf(
+            Intent(Settings.ACTION_SETTINGS),
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+        )
+        return protectedIntents.any { intent ->
+            val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.resolveActivity(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            }
+            resolved?.activityInfo?.packageName == packageName
+        }
     }
     
     private fun isSystemAppByName(packageName: String): Boolean {

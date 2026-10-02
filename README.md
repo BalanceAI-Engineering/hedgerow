@@ -27,6 +27,16 @@ Or with npm:
 npm install expo-blocker
 ```
 
+Then register the config plugin. It adds every permission, the foreground service and the boot receiver to your manifest; the library's own manifest declares none of them, so the module does nothing without it. Bare React Native apps must add the same entries by hand. Google Play reviews `foregroundServiceSubtype` as the reason the foreground service exists, so describe what your app's blocking enforces rather than copying the example.
+
+```json
+{
+  "plugins": [
+    ["expo-blocker", { "foregroundServiceSubtype": "Keeps the apps the user chose blocked until they finish their daily goal" }]
+  ]
+}
+```
+
 ## Required Permissions
 
 This module requires two special permissions that users must grant manually:
@@ -320,7 +330,7 @@ export default function App() {
 | `hasOverlayPermission()` | - | Check overlay permission |
 | `requestUsageStatsPermission()` | - | Open usage access settings |
 | `requestOverlayPermission()` | - | Open overlay settings |
-| `getInstalledApps()` | - | Get list of non-system apps |
+| `getInstalledApps()` | - | Get the package names of launchable apps, excluding this one |
 | `getAppName(package)` | `string` | Get app name from package |
 | `getAppIcon(package)` | `string` | Get app icon as base64 |
 | `getUsageStats()` | - | Get today's app usage stats |

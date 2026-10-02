@@ -27,6 +27,13 @@ class AppBlockerManager private constructor(private val context: Context) {
     }
     
     fun block(apps: List<String>?, excludeApps: List<String> = emptyList()) {
+        // An emptied selection blocks nothing, so it ends any schedule too. Only an
+        // explicit null blocks everything.
+        if (apps != null && apps.isEmpty()) {
+            clear()
+            return
+        }
+
         val currentState = preferencesManager.loadState()
         
         val mergedExcludeApps = (excludeApps + currentState.excludeApps + context.packageName).distinct()
@@ -34,7 +41,7 @@ class AppBlockerManager private constructor(private val context: Context) {
         val state = BlockerState(
             isBlocking = true,
             blockedApps = apps ?: emptyList(),
-            blockAll = apps == null || apps.isEmpty(),
+            blockAll = apps == null,
             scheduledTime = currentState.scheduledTime,
             scheduledAtMillis = currentState.scheduledAtMillis,
             scheduleActivated = currentState.scheduleActivated,
@@ -133,7 +140,7 @@ class AppBlockerManager private constructor(private val context: Context) {
     }
     
     fun getInstalledApps(): List<String> {
-        return appMonitor.getInstalledApps(includeSystemApps = false)
+        return appMonitor.getInstalledApps()
     }
     
     fun getAppName(packageName: String): String {

@@ -280,7 +280,9 @@ class OverlayController(private val context: Context) {
                     }
                 }
                 // Fire event for JS callback
-                val eventIntent = Intent(ACTION_BUTTON_CLICKED)
+                // Explicit, so no other app can register for the action and learn
+                // which app was blocked.
+                val eventIntent = Intent(ACTION_BUTTON_CLICKED).setPackage(context.packageName)
                 eventIntent.putExtra("packageName", appInfo.packageName)
                 context.sendBroadcast(eventIntent)
             }
