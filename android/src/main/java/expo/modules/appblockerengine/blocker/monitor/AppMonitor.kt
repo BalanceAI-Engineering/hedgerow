@@ -12,6 +12,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.provider.Settings
+import android.telecom.TelecomManager
 import android.util.Base64
 import expo.modules.appblockerengine.blocker.model.AppUsageStats
 import java.io.ByteArrayOutputStream
@@ -145,7 +146,7 @@ class AppMonitor(private val context: Context) {
         }
         
         if (blockedApps.contains(packageName)) {
-            return true
+            return !isProtectedPackage(packageName)
         }
         
         if (blockAll) {
@@ -153,6 +154,28 @@ class AppMonitor(private val context: Context) {
         }
         
         return false
+    }
+    
+    // Locking any of these would strand the user: no calls, no way to revoke the
+    // permissions, no home screen. Resolved only once a pick matches, so the
+    // once-a-second poll pays nothing for it.
+    private fun isProtectedPackage(packageName: String): Boolean {
+        val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
+        if (telecomManager?.defaultDialerPackage == packageName) return true
+
+        val protectedIntents = listOf(
+            Intent(Settings.ACTION_SETTINGS),
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+        )
+        return protectedIntents.any { intent ->
+            val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.resolveActivity(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            }
+            resolved?.activityInfo?.packageName == packageName
+        }
     }
     
     private fun isSystemAppByName(packageName: String): Boolean {

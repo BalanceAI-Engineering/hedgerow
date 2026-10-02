@@ -40,26 +40,37 @@ const addPermissions = (manifest) => {
   }
 };
 
-// Lists launchable apps for the picker without QUERY_ALL_PACKAGES.
-const addLauncherQuery = (manifest) => {
-  manifest.queries = manifest.queries ?? [];
-  const hasLauncherQuery = manifest.queries.some((query) =>
-    (query.intent ?? []).some(
-      (intent) =>
-        hasEntry(intent.action, 'android.intent.action.MAIN') &&
-        hasEntry(intent.category, 'android.intent.category.LAUNCHER'),
-    ),
-  );
-  if (hasLauncherQuery) return;
+// MAIN/LAUNCHER lists launchable apps for the picker without QUERY_ALL_PACKAGES;
+// SETTINGS and HOME let the monitor see the apps it must never block.
+const QUERY_INTENTS = [
+  { action: 'android.intent.action.MAIN', category: 'android.intent.category.LAUNCHER' },
+  { action: 'android.settings.SETTINGS' },
+  { action: 'android.intent.action.MAIN', category: 'android.intent.category.HOME' },
+];
 
-  manifest.queries.push({
-    intent: [
-      {
-        action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
-        category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
-      },
-    ],
-  });
+const matchesQueryIntent = (intent, { action, category }) =>
+  hasEntry(intent.action, action) &&
+  (category ? hasEntry(intent.category, category) : (intent.category ?? []).length === 0);
+
+const addQueries = (manifest) => {
+  manifest.queries = manifest.queries ?? [];
+  for (const wanted of QUERY_INTENTS) {
+    const isDeclared = manifest.queries.some((query) =>
+      (query.intent ?? []).some((intent) => matchesQueryIntent(intent, wanted)),
+    );
+    if (isDeclared) continue;
+
+    manifest.queries.push({
+      intent: [
+        {
+          action: [{ $: { 'android:name': wanted.action } }],
+          ...(wanted.category
+            ? { category: [{ $: { 'android:name': wanted.category } }] }
+            : {}),
+        },
+      ],
+    });
+  }
 };
 
 // Replaced rather than skipped when present, since a prebuild without --clean
@@ -109,7 +120,7 @@ const withExpoBlocker = (config, props) => {
     const manifest = modConfig.modResults.manifest;
     manifest.$['xmlns:tools'] = manifest.$['xmlns:tools'] ?? 'http://schemas.android.com/tools';
     addPermissions(manifest);
-    addLauncherQuery(manifest);
+    addQueries(manifest);
     addComponents(manifest.application[0], subtype);
 
     return modConfig;
