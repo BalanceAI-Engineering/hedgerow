@@ -27,6 +27,16 @@ Or with npm:
 npm install expo-blocker
 ```
 
+Then register the config plugin. It adds every permission, the foreground service and the boot receiver to your manifest; the library's own manifest declares none of them, so the module does nothing without it. Bare React Native apps must add the same entries by hand.
+
+```json
+{
+  "plugins": [
+    ["expo-blocker", { "foregroundServiceSubtype": "What the blocking service enforces, for Play review" }]
+  ]
+}
+```
+
 ## Required Permissions
 
 This module requires two special permissions that users must grant manually:

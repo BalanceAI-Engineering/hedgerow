@@ -31,10 +31,12 @@ class AppBlockerManager private constructor(private val context: Context) {
         
         val mergedExcludeApps = (excludeApps + currentState.excludeApps + context.packageName).distinct()
         
+        // Only an explicit null blocks everything; an emptied selection blocks nothing.
+        val hasTargets = apps == null || apps.isNotEmpty()
+        
         val state = BlockerState(
-            isBlocking = true,
+            isBlocking = hasTargets,
             blockedApps = apps ?: emptyList(),
-            // Only an explicit null blocks everything; an emptied selection blocks nothing.
             blockAll = apps == null,
             scheduledTime = currentState.scheduledTime,
             scheduledAtMillis = currentState.scheduledAtMillis,
@@ -43,7 +45,7 @@ class AppBlockerManager private constructor(private val context: Context) {
         )
         
         preferencesManager.saveState(state)
-        startServiceIfNeeded()
+        if (hasTargets) startServiceIfNeeded() else stopServiceIfNotNeeded()
     }
     
     fun clear() {

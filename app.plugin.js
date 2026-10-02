@@ -16,7 +16,7 @@ const PERMISSIONS = [
 ];
 
 const requireSubtype = (props) => {
-  const subtype = props?.foregroundServiceSubtype?.trim();
+  const subtype = String(props?.foregroundServiceSubtype ?? '').trim();
   if (!subtype) {
     throw new Error(
       'expo-blocker: foregroundServiceSubtype is required. Google Play reviews it as the reason the specialUse foreground service exists.',
@@ -44,10 +44,10 @@ const addPermissions = (manifest) => {
 const addLauncherQuery = (manifest) => {
   manifest.queries = manifest.queries ?? [];
   const hasLauncherQuery = manifest.queries.some((query) =>
-    (query.intent ?? []).some((intent) =>
-      (intent.category ?? []).some(
-        (category) => category.$['android:name'] === 'android.intent.category.LAUNCHER',
-      ),
+    (query.intent ?? []).some(
+      (intent) =>
+        hasEntry(intent.action, 'android.intent.action.MAIN') &&
+        hasEntry(intent.category, 'android.intent.category.LAUNCHER'),
     ),
   );
   if (hasLauncherQuery) return;
@@ -62,26 +62,28 @@ const addLauncherQuery = (manifest) => {
   });
 };
 
+// Replaced rather than skipped when present, since a prebuild without --clean
+// reapplies the plugin to a manifest that may carry an older subtype.
 const addComponents = (application, subtype) => {
-  application.service = application.service ?? [];
-  if (!hasEntry(application.service, SERVICE_NAME)) {
-    application.service.push({
-      $: {
-        'android:name': SERVICE_NAME,
-        'android:enabled': 'true',
-        'android:exported': 'false',
-        'android:foregroundServiceType': 'specialUse',
-      },
-      property: [
-        {
-          $: {
-            'android:name': 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE',
-            'android:value': subtype,
-          },
+  application.service = (application.service ?? []).filter(
+    (service) => service.$['android:name'] !== SERVICE_NAME,
+  );
+  application.service.push({
+    $: {
+      'android:name': SERVICE_NAME,
+      'android:enabled': 'true',
+      'android:exported': 'false',
+      'android:foregroundServiceType': 'specialUse',
+    },
+    property: [
+      {
+        $: {
+          'android:name': 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE',
+          'android:value': subtype,
         },
-      ],
-    });
-  }
+      },
+    ],
+  });
 
   application.receiver = application.receiver ?? [];
   if (!hasEntry(application.receiver, BOOT_RECEIVER_NAME)) {
