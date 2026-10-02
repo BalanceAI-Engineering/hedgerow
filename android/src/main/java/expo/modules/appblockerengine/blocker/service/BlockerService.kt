@@ -32,8 +32,7 @@ class BlockerService : Service() {
     private val monitorRunnable = object : Runnable {
         override fun run() {
             if (isMonitoring) {
-                checkAndBlock()
-                handler.postDelayed(this, POLLING_INTERVAL)
+                handler.postDelayed(this, checkAndBlock())
             }
         }
     }
@@ -42,6 +41,8 @@ class BlockerService : Service() {
         const val CHANNEL_ID = "app_blocker_channel"
         const val NOTIFICATION_ID = 1001
         const val POLLING_INTERVAL = 1000L
+        // While paused nothing is blocked, so poll only often enough to resume on time.
+        const val PAUSED_POLLING_INTERVAL = 30_000L
         
         const val ACTION_START = "expo.modules.appblockerengine.action.START"
         const val ACTION_STOP = "expo.modules.appblockerengine.action.STOP"
@@ -150,15 +151,25 @@ class BlockerService : Service() {
         handler.removeCallbacks(monitorRunnable)
     }
     
-    private fun checkAndBlock() {
+    // Returns the delay until the next check.
+    private fun checkAndBlock(): Long {
         val state = preferencesManager.loadState()
+        val now = System.currentTimeMillis()
+        
+        if (state.isPausedAt(now)) {
+            if (overlayController.isOverlayShowing()) {
+                overlayController.hideOverlay()
+                lastBlockedPackage = null
+            }
+            return minOf(PAUSED_POLLING_INTERVAL, state.pausedUntilMillis!! - now).coerceAtLeast(POLLING_INTERVAL)
+        }
         
         if (!state.isBlocking && !state.scheduleActivated) {
             if (overlayController.isOverlayShowing()) {
                 overlayController.hideOverlay()
                 lastBlockedPackage = null
             }
-            return
+            return POLLING_INTERVAL
         }
         
         if (state.scheduleActivated) {
@@ -170,7 +181,7 @@ class BlockerService : Service() {
                     overlayController.hideOverlay()
                     lastBlockedPackage = null
                 }
-                return
+                return POLLING_INTERVAL
             }
         }
         
@@ -179,7 +190,7 @@ class BlockerService : Service() {
                 overlayController.hideOverlay()
                 lastBlockedPackage = null
             }
-            return
+            return POLLING_INTERVAL
         }
         
         val shouldBlock = appMonitor.shouldBlockPackage(
@@ -196,7 +207,7 @@ class BlockerService : Service() {
             if (lastBlockedPackage == currentApp && 
                 overlayController.isOverlayShowing() && 
                 configHash == lastConfigHash) {
-                return
+                return POLLING_INTERVAL
             }
             
             lastBlockedPackage = currentApp
@@ -221,6 +232,8 @@ class BlockerService : Service() {
                 lastBlockedPackage = null
             }
         }
+        
+        return POLLING_INTERVAL
     }
     
     override fun onTaskRemoved(rootIntent: Intent?) {

@@ -45,11 +45,25 @@ class AppBlockerManager private constructor(private val context: Context) {
             scheduledTime = currentState.scheduledTime,
             scheduledAtMillis = currentState.scheduledAtMillis,
             scheduleActivated = currentState.scheduleActivated,
-            excludeApps = mergedExcludeApps
+            excludeApps = mergedExcludeApps,
+            pausedUntilMillis = null
         )
         
         preferencesManager.saveState(state)
         startServiceIfNeeded()
+    }
+    
+    // Keeps the list and the running service; the service resumes blocking on its
+    // own at untilMillis. Writes state only and never starts the service, so it is
+    // safe to call while the app is in the background.
+    fun pauseUntil(untilMillis: Long) {
+        val currentState = preferencesManager.loadState()
+        preferencesManager.saveState(currentState.copy(pausedUntilMillis = untilMillis))
+    }
+    
+    fun resume() {
+        val currentState = preferencesManager.loadState()
+        preferencesManager.saveState(currentState.copy(pausedUntilMillis = null))
     }
     
     fun clear() {
@@ -128,6 +142,7 @@ class AppBlockerManager private constructor(private val context: Context) {
     
     fun isBlocking(): Boolean {
         val state = getState()
+        if (state.isPausedAt(System.currentTimeMillis())) return false
         return state.isBlocking || state.scheduleActivated
     }
     

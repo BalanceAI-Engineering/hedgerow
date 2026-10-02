@@ -22,6 +22,7 @@ class PreferencesManager(context: Context) {
         private const val KEY_SCHEDULED_AT_MILLIS = "scheduled_at_millis"
         private const val KEY_SCHEDULE_ACTIVATED = "schedule_activated"
         private const val KEY_EXCLUDE_APPS = "exclude_apps"
+        private const val KEY_PAUSED_UNTIL_MILLIS = "paused_until_millis"
         private const val KEY_OVERLAY_CONFIG = "overlay_config"
         private const val KEY_BUTTON_CALLBACK = "button_callback"
         
@@ -44,6 +45,7 @@ class PreferencesManager(context: Context) {
             putLong(KEY_SCHEDULED_AT_MILLIS, state.scheduledAtMillis ?: -1L)
             putBoolean(KEY_SCHEDULE_ACTIVATED, state.scheduleActivated)
             putStringSet(KEY_EXCLUDE_APPS, state.excludeApps.toSet())
+            putLong(KEY_PAUSED_UNTIL_MILLIS, state.pausedUntilMillis ?: -1L)
             apply()
         }
     }
@@ -56,7 +58,8 @@ class PreferencesManager(context: Context) {
             scheduledTime = prefs.getString(KEY_SCHEDULED_TIME, null),
             scheduledAtMillis = prefs.getLong(KEY_SCHEDULED_AT_MILLIS, -1L).takeIf { it >= 0 },
             scheduleActivated = prefs.getBoolean(KEY_SCHEDULE_ACTIVATED, false),
-            excludeApps = prefs.getStringSet(KEY_EXCLUDE_APPS, emptySet())?.toList() ?: emptyList()
+            excludeApps = prefs.getStringSet(KEY_EXCLUDE_APPS, emptySet())?.toList() ?: emptyList(),
+            pausedUntilMillis = prefs.getLong(KEY_PAUSED_UNTIL_MILLIS, -1L).takeIf { it >= 0 }
         )
     }
     

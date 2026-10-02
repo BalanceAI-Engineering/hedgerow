@@ -7,8 +7,12 @@ data class BlockerState(
     val scheduledTime: String? = null,
     val scheduledAtMillis: Long? = null,
     val scheduleActivated: Boolean = false,
-    val excludeApps: List<String> = emptyList()
-)
+    val excludeApps: List<String> = emptyList(),
+    val pausedUntilMillis: Long? = null
+) {
+    fun isPausedAt(nowMillis: Long): Boolean =
+        pausedUntilMillis != null && nowMillis < pausedUntilMillis
+}
 
 data class OverlayConfig(
     val title: String = "App Blocked",
