@@ -28,6 +28,16 @@ export class AppBlocker {
     await this.module.clear();
   }
 
+  // Keeps the blocked list and lifts blocking until untilMillis (epoch ms), when
+  // the running service resumes it without the app. Safe to call in the background.
+  async pauseUntil(untilMillis: number): Promise<void> {
+    await this.module.pauseUntil(untilMillis);
+  }
+
+  async resume(): Promise<void> {
+    await this.module.resume();
+  }
+
   async schedule(time: string, excludeApps?: string[]): Promise<void> {
     if (!/^\d{2}:\d{2}$/.test(time)) {
       throw new Error('Invalid time format. Use HH:mm (24-hour format)');

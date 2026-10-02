@@ -1,6 +1,7 @@
 package expo.modules.appblockerengine.blocker.monitor
 
 import android.app.AppOpsManager
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -18,6 +19,16 @@ import expo.modules.appblockerengine.blocker.model.AppUsageStats
 import java.io.ByteArrayOutputStream
 
 class AppMonitor(private val context: Context) {
+    
+    companion object {
+        // Margin on the time since the last query, so no switch falls between two.
+        private const val LOOKBACK_MARGIN_MS = 5_000L
+        // Before any switch has been seen, look back far enough to find the app in front.
+        private const val INITIAL_LOOKBACK_MS = 60 * 60 * 1000L
+        // ACTIVITY_RESUMED (API 29+) under its pre-29 name.
+        @Suppress("DEPRECATION")
+        private const val RESUMED_EVENT = UsageEvents.Event.MOVE_TO_FOREGROUND
+    }
     
     private val usageStatsManager: UsageStatsManager by lazy {
         context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -40,32 +51,33 @@ class AppMonitor(private val context: Context) {
         return appOps == AppOpsManager.MODE_ALLOWED
     }
     
+    // Last app seen resuming. Events only arrive on a switch, so staying in one
+    // app produces none; the last known app carries over between polls.
+    private var lastForegroundPackage: String? = null
+    private var lastQueryMillis: Long? = null
+    
     fun getCurrentForegroundApp(): String? {
         if (!hasUsageStatsPermission()) {
             return null
         }
         
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 10
-        
-        val usageStatsList: List<UsageStats> = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            startTime,
-            endTime
-        )
-        
-        if (usageStatsList.isEmpty()) {
-            return null
-        }
-        
-        var recentStats: UsageStats? = null
-        for (usageStats in usageStatsList) {
-            if (recentStats == null || usageStats.lastTimeUsed > recentStats.lastTimeUsed) {
-                recentStats = usageStats
+        // Spans the whole gap since the previous query, which is 30s while paused.
+        val startTime = lastQueryMillis
+            ?.takeIf { lastForegroundPackage != null }
+            ?.let { it - LOOKBACK_MARGIN_MS }
+            ?: (endTime - INITIAL_LOOKBACK_MS)
+        lastQueryMillis = endTime
+        val events = usageStatsManager.queryEvents(startTime, endTime)
+        val event = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == RESUMED_EVENT) {
+                lastForegroundPackage = event.packageName
             }
         }
         
-        return recentStats?.packageName
+        return lastForegroundPackage
     }
     
     // Launchable apps only, visible through the plugin's MAIN/LAUNCHER <queries>

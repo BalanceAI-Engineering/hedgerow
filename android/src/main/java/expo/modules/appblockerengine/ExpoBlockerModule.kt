@@ -41,6 +41,17 @@ class ExpoBlockerModule : Module() {
             promise.resolve(mapOf("success" to true))
         }
         
+        // JS numbers arrive as Double; epoch milliseconds fit exactly.
+        AsyncFunction("pauseUntil") { untilMillis: Double, promise: Promise ->
+            appBlockerManager.pauseUntil(untilMillis.toLong())
+            promise.resolve(mapOf("success" to true))
+        }
+        
+        AsyncFunction("resume") { promise: Promise ->
+            appBlockerManager.resume()
+            promise.resolve(mapOf("success" to true))
+        }
+        
         AsyncFunction("schedule") { time: String, promise: Promise ->
             val success = appBlockerManager.schedule(time)
             if (success) {
@@ -90,7 +101,8 @@ class ExpoBlockerModule : Module() {
                 "scheduledTime" to state.scheduledTime,
                 "scheduledAtMillis" to state.scheduledAtMillis,
                 "scheduleActivated" to state.scheduleActivated,
-                "excludeApps" to state.excludeApps
+                "excludeApps" to state.excludeApps,
+                "pausedUntilMillis" to state.pausedUntilMillis
             ))
         }
         
