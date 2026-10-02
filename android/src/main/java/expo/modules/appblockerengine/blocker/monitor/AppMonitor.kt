@@ -150,15 +150,15 @@ class AppMonitor(private val context: Context) {
         }
         
         if (blockAll) {
-            return !isSystemAppByName(packageName)
+            return !isSystemAppByName(packageName) && !isProtectedPackage(packageName)
         }
         
         return false
     }
     
     // Locking any of these would strand the user: no calls, no way to revoke the
-    // permissions, no home screen. Resolved only once a pick matches, so the
-    // once-a-second poll pays nothing for it.
+    // permissions, no home screen. Resolved only for an app that would otherwise
+    // be blocked, so the once-a-second poll rarely pays for it.
     private fun isProtectedPackage(packageName: String): Boolean {
         val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
         if (telecomManager?.defaultDialerPackage == packageName) return true

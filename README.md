@@ -27,12 +27,12 @@ Or with npm:
 npm install expo-blocker
 ```
 
-Then register the config plugin. It adds every permission, the foreground service and the boot receiver to your manifest; the library's own manifest declares none of them, so the module does nothing without it. Bare React Native apps must add the same entries by hand.
+Then register the config plugin. It adds every permission, the foreground service and the boot receiver to your manifest; the library's own manifest declares none of them, so the module does nothing without it. Bare React Native apps must add the same entries by hand. Google Play reviews `foregroundServiceSubtype` as the reason the foreground service exists, so describe what your app's blocking enforces rather than copying the example.
 
 ```json
 {
   "plugins": [
-    ["expo-blocker", { "foregroundServiceSubtype": "What the blocking service enforces, for Play review" }]
+    ["expo-blocker", { "foregroundServiceSubtype": "Keeps the apps the user chose blocked until they finish their daily goal" }]
   ]
 }
 ```
