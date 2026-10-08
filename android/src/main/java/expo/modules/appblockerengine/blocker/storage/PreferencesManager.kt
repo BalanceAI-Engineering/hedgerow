@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import expo.modules.appblockerengine.blocker.model.BlockerState
 import expo.modules.appblockerengine.blocker.model.OverlayConfig
 import org.json.JSONObject
+import java.io.File
+import java.util.UUID
 
 class PreferencesManager(context: Context) {
     
@@ -13,8 +15,30 @@ class PreferencesManager(context: Context) {
         Context.MODE_PRIVATE
     )
     
+    // Blocking is per device. Auto Backup copies these prefs to a new phone but
+    // never noBackupFilesDir, so a device id in the prefs that the local marker
+    // lacks means they were restored: drop them rather than lock apps the user
+    // never picked there. Prefs with no id predate the marker and are kept.
+    init {
+        val deviceMarker = File(context.noBackupFilesDir, DEVICE_MARKER_FILE)
+        val localId = runCatching { deviceMarker.readText() }.getOrNull()?.takeIf { it.isNotBlank() }
+        val prefsId = prefs.getString(KEY_DEVICE_ID, null)
+        if (localId == null || prefsId != localId) {
+            val id = localId ?: UUID.randomUUID().toString()
+            // Stamp the prefs only once the marker holds the id, or the next
+            // start would read them as restored.
+            val isMarked = localId != null || runCatching { deviceMarker.writeText(id) }.isSuccess
+            prefs.edit().apply {
+                if (prefsId != null) clear()
+                if (isMarked) putString(KEY_DEVICE_ID, id)
+            }.apply()
+        }
+    }
+    
     companion object {
         private const val PREFS_NAME = "app_blocker_prefs"
+        private const val DEVICE_MARKER_FILE = "app_blocker_device"
+        private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_IS_BLOCKING = "is_blocking"
         private const val KEY_BLOCKED_APPS = "blocked_apps"
         private const val KEY_BLOCK_ALL = "block_all"
@@ -22,6 +46,7 @@ class PreferencesManager(context: Context) {
         private const val KEY_SCHEDULED_AT_MILLIS = "scheduled_at_millis"
         private const val KEY_SCHEDULE_ACTIVATED = "schedule_activated"
         private const val KEY_EXCLUDE_APPS = "exclude_apps"
+        private const val KEY_PAUSED_UNTIL_MILLIS = "paused_until_millis"
         private const val KEY_OVERLAY_CONFIG = "overlay_config"
         private const val KEY_BUTTON_CALLBACK = "button_callback"
         
@@ -44,6 +69,7 @@ class PreferencesManager(context: Context) {
             putLong(KEY_SCHEDULED_AT_MILLIS, state.scheduledAtMillis ?: -1L)
             putBoolean(KEY_SCHEDULE_ACTIVATED, state.scheduleActivated)
             putStringSet(KEY_EXCLUDE_APPS, state.excludeApps.toSet())
+            putLong(KEY_PAUSED_UNTIL_MILLIS, state.pausedUntilMillis ?: -1L)
             apply()
         }
     }
@@ -56,7 +82,8 @@ class PreferencesManager(context: Context) {
             scheduledTime = prefs.getString(KEY_SCHEDULED_TIME, null),
             scheduledAtMillis = prefs.getLong(KEY_SCHEDULED_AT_MILLIS, -1L).takeIf { it >= 0 },
             scheduleActivated = prefs.getBoolean(KEY_SCHEDULE_ACTIVATED, false),
-            excludeApps = prefs.getStringSet(KEY_EXCLUDE_APPS, emptySet())?.toList() ?: emptyList()
+            excludeApps = prefs.getStringSet(KEY_EXCLUDE_APPS, emptySet())?.toList() ?: emptyList(),
+            pausedUntilMillis = prefs.getLong(KEY_PAUSED_UNTIL_MILLIS, -1L).takeIf { it >= 0 }
         )
     }
     

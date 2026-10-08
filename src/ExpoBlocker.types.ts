@@ -6,6 +6,7 @@ export interface BlockerState {
   scheduledAtMillis: number | null;
   scheduleActivated: boolean;
   excludeApps: string[];
+  pausedUntilMillis: number | null;
 }
 
 export interface PermissionStatus {

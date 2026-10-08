@@ -74,7 +74,7 @@ const addQueries = (manifest) => {
 };
 
 // Replaced rather than skipped when present, since a prebuild without --clean
-// reapplies the plugin to a manifest that may carry an older subtype.
+// reapplies the plugin to a manifest that may carry an older entry.
 const addComponents = (application, subtype) => {
   application.service = (application.service ?? []).filter(
     (service) => service.$['android:name'] !== SERVICE_NAME,
@@ -96,21 +96,24 @@ const addComponents = (application, subtype) => {
     ],
   });
 
-  application.receiver = application.receiver ?? [];
-  if (!hasEntry(application.receiver, BOOT_RECEIVER_NAME)) {
-    application.receiver.push({
-      $: {
-        'android:name': BOOT_RECEIVER_NAME,
-        'android:enabled': 'true',
-        'android:exported': 'true',
+  application.receiver = (application.receiver ?? []).filter(
+    (receiver) => receiver.$['android:name'] !== BOOT_RECEIVER_NAME,
+  );
+  application.receiver.push({
+    $: {
+      'android:name': BOOT_RECEIVER_NAME,
+      'android:enabled': 'true',
+      'android:exported': 'true',
+    },
+    'intent-filter': [
+      {
+        action: [
+          { $: { 'android:name': 'android.intent.action.BOOT_COMPLETED' } },
+          { $: { 'android:name': 'android.intent.action.MY_PACKAGE_REPLACED' } },
+        ],
       },
-      'intent-filter': [
-        {
-          action: [{ $: { 'android:name': 'android.intent.action.BOOT_COMPLETED' } }],
-        },
-      ],
-    });
-  }
+    ],
+  });
 };
 
 const withExpoBlocker = (config, props) => {

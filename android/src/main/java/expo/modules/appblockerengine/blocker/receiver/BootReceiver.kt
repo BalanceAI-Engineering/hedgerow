@@ -9,7 +9,10 @@ import expo.modules.appblockerengine.blocker.storage.PreferencesManager
 class BootReceiver : BroadcastReceiver() {
     
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED) {
+        // An update kills the running service like a reboot does; both may start a
+        // foreground service from the background.
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
+            intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) {
             return
         }
         

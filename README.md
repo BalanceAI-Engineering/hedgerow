@@ -245,9 +245,12 @@ console.log(state);
 //   scheduledTime: '2026-09-16 21:00',
 //   scheduledAtMillis: 1785856800000,
 //   scheduleActivated: false,
-//   excludeApps: ['com.yourapp.package']
+//   excludeApps: ['com.yourapp.package'],
+//   pausedUntilMillis: null
 // }
 ```
+
+`isBlocking` here stays `true` through a pause, so it says the list is held; `isBlocking()` says whether apps are blocked right now.
 
 ## Complete Example
 
@@ -321,6 +324,8 @@ export default function App() {
 | `block(apps?, excludeApps?)` | `string[]`, `string[]` | Block apps. Pass `null` for all non-system apps |
 | `blockAll(excludeApps?)` | `string[]` | Block all non-system apps |
 | `clear()` | - | Stop all blocking |
+| `pauseUntil(untilMillis)` | `number` | Keep the list but lift blocking until an epoch-ms time; the service resumes it on its own |
+| `resume()` | - | End a pause now |
 | `schedule(time, excludeApps?)` | `string` (HH:mm), `string[]` | Schedule blocking at next occurrence of time (today or tomorrow) |
 | `scheduleAt(dateTime, excludeApps?)` | `string` (yyyy-MM-dd HH:mm), `string[]` | Schedule blocking at exact date and time (local timezone) |
 | `getState()` | - | Get current blocking state |
