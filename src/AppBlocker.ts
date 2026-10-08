@@ -34,6 +34,7 @@ export class AppBlocker {
     await this.module.pauseUntil(untilMillis);
   }
 
+  // Starts the service, so call it with the app in front.
   async resume(): Promise<void> {
     await this.module.resume();
   }

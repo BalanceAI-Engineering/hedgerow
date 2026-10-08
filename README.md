@@ -245,9 +245,12 @@ console.log(state);
 //   scheduledTime: '2026-09-16 21:00',
 //   scheduledAtMillis: 1785856800000,
 //   scheduleActivated: false,
-//   excludeApps: ['com.yourapp.package']
+//   excludeApps: ['com.yourapp.package'],
+//   pausedUntilMillis: null
 // }
 ```
+
+`isBlocking` here stays `true` through a pause, so it says the list is held; `isBlocking()` says whether apps are blocked right now.
 
 ## Complete Example
 

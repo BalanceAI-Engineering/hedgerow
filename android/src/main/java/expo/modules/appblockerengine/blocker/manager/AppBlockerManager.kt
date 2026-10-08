@@ -64,6 +64,7 @@ class AppBlockerManager private constructor(private val context: Context) {
     fun resume() {
         val currentState = preferencesManager.loadState()
         preferencesManager.saveState(currentState.copy(pausedUntilMillis = null))
+        startServiceIfNeeded()
     }
     
     fun clear() {

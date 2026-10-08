@@ -23,8 +23,9 @@ class AppMonitor(private val context: Context) {
     companion object {
         // Margin on the time since the last query, so no switch falls between two.
         private const val LOOKBACK_MARGIN_MS = 5_000L
-        // Before any switch has been seen, look back far enough to find the app in front.
-        private const val INITIAL_LOOKBACK_MS = 60 * 60 * 1000L
+        // Once per process: far enough back to find an app held in front across a
+        // service restart. Later polls only cover the gap since the last one.
+        private const val INITIAL_LOOKBACK_MS = 24 * 60 * 60 * 1000L
         // ACTIVITY_RESUMED (API 29+) under its pre-29 name.
         @Suppress("DEPRECATION")
         private const val RESUMED_EVENT = UsageEvents.Event.MOVE_TO_FOREGROUND
@@ -64,7 +65,6 @@ class AppMonitor(private val context: Context) {
         val endTime = System.currentTimeMillis()
         // Spans the whole gap since the previous query, which is 30s while paused.
         val startTime = lastQueryMillis
-            ?.takeIf { lastForegroundPackage != null }
             ?.let { it - LOOKBACK_MARGIN_MS }
             ?: (endTime - INITIAL_LOOKBACK_MS)
         lastQueryMillis = endTime

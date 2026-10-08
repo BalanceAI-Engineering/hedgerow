@@ -139,10 +139,11 @@ class BlockerService : Service() {
             .build()
     }
     
+    // A start while running re-checks now, so a resume or new list does not wait
+    // out the paused polling interval.
     private fun startMonitoring() {
-        if (isMonitoring) return
-        
         isMonitoring = true
+        handler.removeCallbacks(monitorRunnable)
         handler.post(monitorRunnable)
     }
     
