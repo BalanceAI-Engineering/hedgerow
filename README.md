@@ -407,6 +407,16 @@ export default function App() {
   showCloseButton?: boolean,     // Show close button (default: false)
   closeButtonColor?: string,     // Close button hex color (default: "#666666")
 }
+```
+
+### Foreground Notification Options
+```typescript
+{
+  notificationTitle?: string,       // default: "App Blocker Active"
+  notificationText?: string,        // default: "Monitoring apps in background"
+  notificationChannelName?: string, // Shown in the app's notification settings (default: "App Blocker")
+}
+```
 
 ## AppUsageStat Object
 
