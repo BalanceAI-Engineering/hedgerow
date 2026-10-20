@@ -166,7 +166,25 @@ class OverlayController(private val context: Context) {
             }
             contentLayout.addView(appNameText)
         }
-        
+
+        if (config.title.isNotEmpty()) {
+            val titleText = TextView(context).apply {
+                text = config.title
+                textSize = config.titleTextSize
+                setTextColor(config.textColor.toColorInt())
+                gravity = Gravity.CENTER
+                setTypeface(typeface, Typeface.BOLD)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 16
+                    gravity = Gravity.CENTER_HORIZONTAL
+                }
+            }
+            contentLayout.addView(titleText)
+        }
+
         if (!config.message.isNullOrEmpty()) {
             val messageText = TextView(context).apply {
                 text = config.message
