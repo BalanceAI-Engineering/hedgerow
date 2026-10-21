@@ -216,7 +216,13 @@ class ExpoBlockerModule : Module() {
                 buttonHeight = (config["buttonHeight"] as? Number)?.toFloat() ?: 60f,
                 buttonMarginTop = (config["buttonMarginTop"] as? Number)?.toFloat() ?: 40f,
                 showCloseButton = (config["showCloseButton"] as? Boolean) ?: false,
-                closeButtonColor = config["closeButtonColor"] as? String ?: "#666666"
+                closeButtonColor = config["closeButtonColor"] as? String ?: "#666666",
+                notificationTitle = (config["notificationTitle"] as? String)?.takeIf { it.isNotBlank() }
+                    ?: expo.modules.appblockerengine.blocker.model.OverlayConfig.DEFAULT_NOTIFICATION_TITLE,
+                notificationText = (config["notificationText"] as? String)?.takeIf { it.isNotBlank() }
+                    ?: expo.modules.appblockerengine.blocker.model.OverlayConfig.DEFAULT_NOTIFICATION_TEXT,
+                notificationChannelName = (config["notificationChannelName"] as? String)?.takeIf { it.isNotBlank() }
+                    ?: expo.modules.appblockerengine.blocker.model.OverlayConfig.DEFAULT_NOTIFICATION_CHANNEL_NAME
             )
             appBlockerManager.updateOverlayConfig(overlayConfig)
             promise.resolve(mapOf("success" to true))
@@ -246,7 +252,10 @@ class ExpoBlockerModule : Module() {
                 "buttonHeight" to config.buttonHeight,
                 "buttonMarginTop" to config.buttonMarginTop,
                 "showCloseButton" to config.showCloseButton,
-                "closeButtonColor" to config.closeButtonColor
+                "closeButtonColor" to config.closeButtonColor,
+                "notificationTitle" to config.notificationTitle,
+                "notificationText" to config.notificationText,
+                "notificationChannelName" to config.notificationChannelName
             ))
         }
     }

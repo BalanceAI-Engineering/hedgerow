@@ -37,8 +37,17 @@ data class OverlayConfig(
     val buttonHeight: Float = 60f,
     val buttonMarginTop: Float = 40f,
     val showCloseButton: Boolean = false,
-    val closeButtonColor: String = "#666666"
-)
+    val closeButtonColor: String = "#666666",
+    val notificationTitle: String = DEFAULT_NOTIFICATION_TITLE,
+    val notificationText: String = DEFAULT_NOTIFICATION_TEXT,
+    val notificationChannelName: String = DEFAULT_NOTIFICATION_CHANNEL_NAME
+) {
+    companion object {
+        const val DEFAULT_NOTIFICATION_TITLE = "App Blocker Active"
+        const val DEFAULT_NOTIFICATION_TEXT = "Monitoring apps in background"
+        const val DEFAULT_NOTIFICATION_CHANNEL_NAME = "App Blocker"
+    }
+}
 
 data class AppInfo(
     val packageName: String,

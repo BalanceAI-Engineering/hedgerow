@@ -112,6 +112,9 @@ class PreferencesManager(context: Context) {
             put("buttonMarginTop", config.buttonMarginTop.toDouble())
             put("showCloseButton", config.showCloseButton)
             put("closeButtonColor", config.closeButtonColor)
+            put("notificationTitle", config.notificationTitle)
+            put("notificationText", config.notificationText)
+            put("notificationChannelName", config.notificationChannelName)
         }
         prefs.edit().putString(KEY_OVERLAY_CONFIG, json.toString()).apply()
     }
@@ -144,7 +147,10 @@ class PreferencesManager(context: Context) {
                 buttonHeight = json.optDouble("buttonHeight", 60.0).toFloat(),
                 buttonMarginTop = json.optDouble("buttonMarginTop", 40.0).toFloat(),
                 showCloseButton = json.optBoolean("showCloseButton", false),
-                closeButtonColor = json.optString("closeButtonColor", "#666666")
+                closeButtonColor = json.optString("closeButtonColor", "#666666"),
+                notificationTitle = json.optString("notificationTitle", OverlayConfig.DEFAULT_NOTIFICATION_TITLE),
+                notificationText = json.optString("notificationText", OverlayConfig.DEFAULT_NOTIFICATION_TEXT),
+                notificationChannelName = json.optString("notificationChannelName", OverlayConfig.DEFAULT_NOTIFICATION_CHANNEL_NAME)
             )
         } catch (e: Exception) {
             OverlayConfig()

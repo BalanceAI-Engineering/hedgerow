@@ -407,6 +407,19 @@ export default function App() {
   showCloseButton?: boolean,     // Show close button (default: false)
   closeButtonColor?: string,     // Close button hex color (default: "#666666")
 }
+```
+
+### Foreground Notification Options
+
+The service reads these when it starts, so set them with `updateOverlayConfig` before `block()` or `scheduleAt()`; an update while blocking is already running shows on the next start. Blank values fall back to the defaults.
+
+```typescript
+{
+  notificationTitle?: string,       // default: "App Blocker Active"
+  notificationText?: string,        // default: "Monitoring apps in background"
+  notificationChannelName?: string, // Shown in the app's notification settings (default: "App Blocker")
+}
+```
 
 ## AppUsageStat Object
 

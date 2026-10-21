@@ -14,6 +14,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import android.util.Base64
 import expo.modules.appblockerengine.blocker.model.AppUsageStats
 import java.io.ByteArrayOutputStream
@@ -92,9 +93,10 @@ class AppMonitor(private val context: Context) {
             packageManager.queryIntentActivities(launcherIntent, 0)
         }
 
+        val protectedPackages = protectedPackages()
         return activities
             .map { it.activityInfo.packageName }
-            .filter { it != context.packageName }
+            .filter { it != context.packageName && it !in protectedPackages }
             .distinct()
     }
     
@@ -168,26 +170,31 @@ class AppMonitor(private val context: Context) {
         return false
     }
     
-    // Locking any of these would strand the user: no calls, no way to revoke the
-    // permissions, no home screen. Resolved only for an app that would otherwise
-    // be blocked, so the once-a-second poll rarely pays for it.
-    private fun isProtectedPackage(packageName: String): Boolean {
-        val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
-        if (telecomManager?.defaultDialerPackage == packageName) return true
+    // Resolved only for an app that would otherwise be blocked, so the
+    // once-a-second poll rarely pays for it.
+    private fun isProtectedPackage(packageName: String): Boolean =
+        packageName in protectedPackages()
 
+    // Locking any of these would strand the user: no calls, no way to revoke the
+    // permissions, no home screen, no emergency help. They are left out of
+    // getInstalledApps too, so a picker never offers a lock that cannot hold.
+    private fun protectedPackages(): Set<String> {
+        val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
         val protectedIntents = listOf(
             Intent(Settings.ACTION_SETTINGS),
             Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+            Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE),
         )
-        return protectedIntents.any { intent ->
-            val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val resolved = protectedIntents.mapNotNull { intent ->
+            val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 packageManager.resolveActivity(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
             } else {
                 @Suppress("DEPRECATION")
                 packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
             }
-            resolved?.activityInfo?.packageName == packageName
+            info?.activityInfo?.packageName
         }
+        return (resolved + listOfNotNull(telecomManager?.defaultDialerPackage)).toSet()
     }
     
     private fun isSystemAppByName(packageName: String): Boolean {

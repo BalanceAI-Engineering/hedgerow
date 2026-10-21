@@ -38,6 +38,10 @@ export interface OverlayConfig {
   buttonMarginTop?: number;
   showCloseButton?: boolean;
   closeButtonColor?: string;
+  // The foreground service's notification, shown while blocking is active.
+  notificationTitle?: string;
+  notificationText?: string;
+  notificationChannelName?: string;
 }
 
 export interface AppUsageStat {

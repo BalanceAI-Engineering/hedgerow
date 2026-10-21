@@ -89,6 +89,9 @@ class BlockerService : Service() {
                 return START_NOT_STICKY
             }
             ACTION_START, null -> {
+                // Re-read on every start, so copy set by the app after the
+                // service was created reaches the channel and the notification.
+                createNotificationChannel()
                 startForeground(NOTIFICATION_ID, createNotification())
                 startMonitoring()
             }
@@ -109,7 +112,7 @@ class BlockerService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "App Blocker",
+                preferencesManager.loadOverlayConfig().notificationChannelName,
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Shows when app blocking is active"
@@ -129,9 +132,10 @@ class BlockerService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
         
+        val config = preferencesManager.loadOverlayConfig()
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("App Blocker Active")
-            .setContentText("Monitoring apps in background")
+            .setContentTitle(config.notificationTitle)
+            .setContentText(config.notificationText)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

@@ -41,11 +41,13 @@ const addPermissions = (manifest) => {
 };
 
 // MAIN/LAUNCHER lists launchable apps for the picker without QUERY_ALL_PACKAGES;
-// SETTINGS and HOME let the monitor see the apps it must never block.
+// SETTINGS, HOME and EMERGENCY_ASSISTANCE let the monitor see the apps it must
+// never block.
 const QUERY_INTENTS = [
   { action: 'android.intent.action.MAIN', category: 'android.intent.category.LAUNCHER' },
   { action: 'android.settings.SETTINGS' },
   { action: 'android.intent.action.MAIN', category: 'android.intent.category.HOME' },
+  { action: 'android.telephony.action.EMERGENCY_ASSISTANCE' },
 ];
 
 const matchesQueryIntent = (intent, { action, category }) =>
