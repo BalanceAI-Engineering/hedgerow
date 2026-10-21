@@ -410,6 +410,9 @@ export default function App() {
 ```
 
 ### Foreground Notification Options
+
+The service reads these when it starts, so set them with `updateOverlayConfig` before `block()` or `scheduleAt()`; an update while blocking is already running shows on the next start. Blank values fall back to the defaults.
+
 ```typescript
 {
   notificationTitle?: string,       // default: "App Blocker Active"

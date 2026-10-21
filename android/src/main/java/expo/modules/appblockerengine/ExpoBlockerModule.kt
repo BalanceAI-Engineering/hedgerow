@@ -217,11 +217,11 @@ class ExpoBlockerModule : Module() {
                 buttonMarginTop = (config["buttonMarginTop"] as? Number)?.toFloat() ?: 40f,
                 showCloseButton = (config["showCloseButton"] as? Boolean) ?: false,
                 closeButtonColor = config["closeButtonColor"] as? String ?: "#666666",
-                notificationTitle = config["notificationTitle"] as? String
+                notificationTitle = (config["notificationTitle"] as? String)?.takeIf { it.isNotBlank() }
                     ?: expo.modules.appblockerengine.blocker.model.OverlayConfig.DEFAULT_NOTIFICATION_TITLE,
-                notificationText = config["notificationText"] as? String
+                notificationText = (config["notificationText"] as? String)?.takeIf { it.isNotBlank() }
                     ?: expo.modules.appblockerengine.blocker.model.OverlayConfig.DEFAULT_NOTIFICATION_TEXT,
-                notificationChannelName = config["notificationChannelName"] as? String
+                notificationChannelName = (config["notificationChannelName"] as? String)?.takeIf { it.isNotBlank() }
                     ?: expo.modules.appblockerengine.blocker.model.OverlayConfig.DEFAULT_NOTIFICATION_CHANNEL_NAME
             )
             appBlockerManager.updateOverlayConfig(overlayConfig)

@@ -149,24 +149,6 @@ class OverlayController(private val context: Context) {
             contentLayout.addView(iconImageView)
         }
         
-        if (config.showAppName) {
-            val appNameText = TextView(context).apply {
-                text = "${appInfo.appName} is blocked"
-                textSize = 28f
-                setTextColor(config.textColor.toColorInt())
-                gravity = Gravity.CENTER
-                setTypeface(typeface, Typeface.BOLD)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    bottomMargin = 16
-                    gravity = Gravity.CENTER_HORIZONTAL
-                }
-            }
-            contentLayout.addView(appNameText)
-        }
-
         if (config.title.isNotEmpty()) {
             val titleText = TextView(context).apply {
                 text = config.title
@@ -183,6 +165,24 @@ class OverlayController(private val context: Context) {
                 }
             }
             contentLayout.addView(titleText)
+        }
+
+        if (config.showAppName) {
+            val appNameText = TextView(context).apply {
+                text = "${appInfo.appName} is blocked"
+                textSize = 28f
+                setTextColor(config.textColor.toColorInt())
+                gravity = Gravity.CENTER
+                setTypeface(typeface, Typeface.BOLD)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 16
+                    gravity = Gravity.CENTER_HORIZONTAL
+                }
+            }
+            contentLayout.addView(appNameText)
         }
 
         if (!config.message.isNullOrEmpty()) {
