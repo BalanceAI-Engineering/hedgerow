@@ -14,7 +14,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
-import android.telephony.TelephonyManager
 import android.util.Base64
 import expo.modules.appblockerengine.blocker.model.AppUsageStats
 import java.io.ByteArrayOutputStream
@@ -30,6 +29,11 @@ class AppMonitor(private val context: Context) {
         // ACTIVITY_RESUMED (API 29+) under its pre-29 name.
         @Suppress("DEPRECATION")
         private const val RESUMED_EVENT = UsageEvents.Event.MOVE_TO_FOREGROUND
+        // Spelled out because TelephonyManager.ACTION_EMERGENCY_ASSISTANCE is
+        // @SystemApi and absent from the public SDK. Matches the <queries> entry
+        // app.plugin.js adds, without which this would never resolve on API 30+.
+        private const val ACTION_EMERGENCY_ASSISTANCE =
+            "android.telephony.action.EMERGENCY_ASSISTANCE"
     }
     
     private val usageStatsManager: UsageStatsManager by lazy {
@@ -183,7 +187,7 @@ class AppMonitor(private val context: Context) {
         val protectedIntents = listOf(
             Intent(Settings.ACTION_SETTINGS),
             Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
-            Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE),
+            Intent(ACTION_EMERGENCY_ASSISTANCE),
         )
         val resolved = protectedIntents.mapNotNull { intent ->
             val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
