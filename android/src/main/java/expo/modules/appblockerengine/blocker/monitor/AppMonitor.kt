@@ -14,7 +14,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
-import android.telephony.TelephonyManager
 import android.util.Base64
 import expo.modules.appblockerengine.blocker.model.AppUsageStats
 import java.io.ByteArrayOutputStream
@@ -178,12 +177,13 @@ class AppMonitor(private val context: Context) {
     // Locking any of these would strand the user: no calls, no way to revoke the
     // permissions, no home screen, no emergency help. They are left out of
     // getInstalledApps too, so a picker never offers a lock that cannot hold.
+    // Emergency help rides on the default dialer below; the platform's
+    // EMERGENCY_ASSISTANCE action is @SystemApi and not on the public SDK.
     private fun protectedPackages(): Set<String> {
         val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
         val protectedIntents = listOf(
             Intent(Settings.ACTION_SETTINGS),
             Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
-            Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE),
         )
         val resolved = protectedIntents.mapNotNull { intent ->
             val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
