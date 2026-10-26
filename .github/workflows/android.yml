@@ -1,0 +1,49 @@
+# Compiles the Android module on every pull request. The module has no Gradle project of its own —
+# it builds through a host app — so the example app in this repository is the host: its native
+# project is generated with prebuild, then the module's Kotlin is compiled.
+name: Android
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile:
+    name: Compile the module
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: example/package-lock.json
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install the example app's dependencies
+        working-directory: example
+        run: npm ci
+
+      # The native project is not committed; prebuild generates it from app.json and the
+      # module's config plugin, so the plugin is exercised here too.
+      - name: Generate the Android project
+        working-directory: example
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Compile
+        working-directory: example/android
+        run: ./gradlew :expo-blocker:compileReleaseKotlin

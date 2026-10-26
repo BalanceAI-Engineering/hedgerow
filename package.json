@@ -27,10 +27,10 @@
   "license": "MIT",
   "homepage": "https://github.com/YeneKoo/ExpoBlocker#readme",
   "devDependencies": {
-    "@types/react": "~19.1.1",
-    "expo-module-scripts": "^55.0.2",
-    "expo": "^55.0.8",
-    "react-native": "0.82.1"
+    "@types/react": "~19.2.14",
+    "expo-module-scripts": "^56.0.8",
+    "expo": "^57.0.26",
+    "react-native": "0.86.3"
   },
   "peerDependencies": {
     "expo": ">=55",
