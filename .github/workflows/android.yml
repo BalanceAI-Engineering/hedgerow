@@ -1,6 +1,6 @@
 # Compiles the Android module on every pull request. The module has no Gradle project of its own —
 # it builds through a host app — so the example app in this repository is the host: its native
-# project is generated with prebuild, then the module's Kotlin is compiled.
+# project is generated with prebuild, then the module's Kotlin is compiled and the manifest merged.
 name: Android
 
 on:
@@ -27,23 +27,32 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: example/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            example/package-lock.json
 
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: "17"
 
+      # The config plugin is loaded from the repository root, so it resolves expo/config-plugins
+      # here rather than from the example app.
+      - name: Install the module's dependencies
+        run: npm ci
+
       - name: Install the example app's dependencies
         working-directory: example
         run: npm ci
 
-      # The native project is not committed; prebuild generates it from app.json and the
-      # module's config plugin, so the plugin is exercised here too.
+      # The native project is not committed. Prebuild generates it and runs the config plugin,
+      # which is what writes the service, the boot receiver and the permissions into the manifest.
       - name: Generate the Android project
         working-directory: example
         run: npx expo prebuild --platform android --no-install
 
-      - name: Compile
+      # Compiling alone would not look at the manifest, so the merge runs too: that is what fails
+      # if the plugin emits something the platform rejects.
+      - name: Compile and merge the manifest
         working-directory: example/android
-        run: ./gradlew :expo-blocker:compileReleaseKotlin
+        run: ./gradlew :expo-blocker:compileReleaseKotlin :app:processReleaseManifest
