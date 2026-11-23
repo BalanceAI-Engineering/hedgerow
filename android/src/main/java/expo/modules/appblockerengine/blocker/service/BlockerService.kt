@@ -161,7 +161,7 @@ class BlockerService : Service() {
         val state = preferencesManager.loadState()
         val now = System.currentTimeMillis()
         
-        if (state.isPausedAt(now)) {
+        if (state.isHeldOpenAt(now)) {
             if (overlayController.isOverlayShowing()) {
                 overlayController.hideOverlay()
                 lastBlockedPackage = null

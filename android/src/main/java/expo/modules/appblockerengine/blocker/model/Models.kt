@@ -1,5 +1,14 @@
 package expo.modules.appblockerengine.blocker.model
 
+import java.util.Calendar
+
+// A daily stretch, in minutes after local midnight, that blocks even while the
+// blocker is paused. endMinute is exclusive; 1440 is midnight.
+data class BlockWindow(
+    val startMinute: Int,
+    val endMinute: Int
+)
+
 data class BlockerState(
     val isBlocking: Boolean = false,
     val blockedApps: List<String> = emptyList(),
@@ -8,10 +17,29 @@ data class BlockerState(
     val scheduledAtMillis: Long? = null,
     val scheduleActivated: Boolean = false,
     val excludeApps: List<String> = emptyList(),
-    val pausedUntilMillis: Long? = null
+    val pausedUntilMillis: Long? = null,
+    val windows: List<BlockWindow> = emptyList(),
+    val windowsPausedUntilMillis: Long? = null
 ) {
     fun isPausedAt(nowMillis: Long): Boolean =
         pausedUntilMillis != null && nowMillis < pausedUntilMillis
+
+    fun isInWindowAt(nowMillis: Long): Boolean {
+        if (windowsPausedUntilMillis != null && nowMillis < windowsPausedUntilMillis) return false
+        val minute = minuteOfDay(nowMillis)
+        return windows.any { minute >= it.startMinute && minute < it.endMinute }
+    }
+
+    // A window holds the apps blocked through a pause.
+    fun isHeldOpenAt(nowMillis: Long): Boolean =
+        isPausedAt(nowMillis) && !isInWindowAt(nowMillis)
+
+    companion object {
+        fun minuteOfDay(nowMillis: Long): Int {
+            val calendar = Calendar.getInstance().apply { timeInMillis = nowMillis }
+            return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+        }
+    }
 }
 
 data class OverlayConfig(

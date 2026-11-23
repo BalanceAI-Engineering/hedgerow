@@ -2,8 +2,10 @@ package expo.modules.appblockerengine.blocker.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import expo.modules.appblockerengine.blocker.model.BlockWindow
 import expo.modules.appblockerengine.blocker.model.BlockerState
 import expo.modules.appblockerengine.blocker.model.OverlayConfig
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.UUID
@@ -47,6 +49,8 @@ class PreferencesManager(context: Context) {
         private const val KEY_SCHEDULE_ACTIVATED = "schedule_activated"
         private const val KEY_EXCLUDE_APPS = "exclude_apps"
         private const val KEY_PAUSED_UNTIL_MILLIS = "paused_until_millis"
+        private const val KEY_WINDOWS = "block_windows"
+        private const val KEY_WINDOWS_PAUSED_UNTIL_MILLIS = "windows_paused_until_millis"
         private const val KEY_OVERLAY_CONFIG = "overlay_config"
         private const val KEY_BUTTON_CALLBACK = "button_callback"
         
@@ -70,6 +74,8 @@ class PreferencesManager(context: Context) {
             putBoolean(KEY_SCHEDULE_ACTIVATED, state.scheduleActivated)
             putStringSet(KEY_EXCLUDE_APPS, state.excludeApps.toSet())
             putLong(KEY_PAUSED_UNTIL_MILLIS, state.pausedUntilMillis ?: -1L)
+            putString(KEY_WINDOWS, encodeWindows(state.windows))
+            putLong(KEY_WINDOWS_PAUSED_UNTIL_MILLIS, state.windowsPausedUntilMillis ?: -1L)
             apply()
         }
     }
@@ -83,8 +89,24 @@ class PreferencesManager(context: Context) {
             scheduledAtMillis = prefs.getLong(KEY_SCHEDULED_AT_MILLIS, -1L).takeIf { it >= 0 },
             scheduleActivated = prefs.getBoolean(KEY_SCHEDULE_ACTIVATED, false),
             excludeApps = prefs.getStringSet(KEY_EXCLUDE_APPS, emptySet())?.toList() ?: emptyList(),
-            pausedUntilMillis = prefs.getLong(KEY_PAUSED_UNTIL_MILLIS, -1L).takeIf { it >= 0 }
+            pausedUntilMillis = prefs.getLong(KEY_PAUSED_UNTIL_MILLIS, -1L).takeIf { it >= 0 },
+            windows = decodeWindows(prefs.getString(KEY_WINDOWS, null)),
+            windowsPausedUntilMillis = prefs.getLong(KEY_WINDOWS_PAUSED_UNTIL_MILLIS, -1L).takeIf { it >= 0 }
         )
+    }
+
+    private fun encodeWindows(windows: List<BlockWindow>): String =
+        JSONArray(windows.map { JSONArray(listOf(it.startMinute, it.endMinute)) }).toString()
+
+    private fun decodeWindows(json: String?): List<BlockWindow> {
+        if (json.isNullOrEmpty()) return emptyList()
+        return runCatching {
+            val array = JSONArray(json)
+            (0 until array.length()).map { index ->
+                val pair = array.getJSONArray(index)
+                BlockWindow(pair.getInt(0), pair.getInt(1))
+            }
+        }.getOrDefault(emptyList())
     }
     
     fun saveOverlayConfig(config: OverlayConfig) {

@@ -1,6 +1,7 @@
 import ExpoBlocker, { addButtonClickListener } from './ExpoBlockerModule';
-import type { 
-  BlockerState, 
+import type {
+  BlockWindow,
+  BlockerState,
   PermissionStatus, 
   OverlayConfig,
   AppUsageStat,
@@ -33,6 +34,19 @@ export class AppBlocker {
   // the running service resumes it without the app. Safe to call in the background.
   async pauseUntil(untilMillis: number): Promise<void> {
     await this.module.pauseUntil(untilMillis);
+  }
+
+  // Daily windows that keep the apps blocked even while paused. Writes state
+  // only, so it's safe in the background; an empty list removes them.
+  async setWindows(windows: BlockWindow[]): Promise<void> {
+    await this.module.setWindows(
+      windows.map(({ startMinute, endMinute }) => [startMinute, endMinute]),
+    );
+  }
+
+  // Lets the apps through the windows until untilMillis (epoch ms).
+  async pauseWindowsUntil(untilMillis: number): Promise<void> {
+    await this.module.pauseWindowsUntil(untilMillis);
   }
 
   // Starts the service, so call it with the app in front.
@@ -161,4 +175,4 @@ export function useButtonClickListener(callback: (event: ButtonClickedEvent) => 
   }, [callback]);
 }
 
-export type { BlockerState, PermissionStatus, OverlayConfig, AppUsageStat, AppUsageTime, ButtonClickedEvent };
+export type { BlockWindow, BlockerState, PermissionStatus, OverlayConfig, AppUsageStat, AppUsageTime, ButtonClickedEvent };

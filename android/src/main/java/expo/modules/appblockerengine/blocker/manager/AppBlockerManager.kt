@@ -3,6 +3,7 @@ package expo.modules.appblockerengine.blocker.manager
 import android.content.Context
 import expo.modules.appblockerengine.blocker.model.AppInfo
 import expo.modules.appblockerengine.blocker.model.AppUsageStats
+import expo.modules.appblockerengine.blocker.model.BlockWindow
 import expo.modules.appblockerengine.blocker.model.BlockerState
 import expo.modules.appblockerengine.blocker.model.OverlayConfig
 import expo.modules.appblockerengine.blocker.model.ScreenSession
@@ -47,7 +48,9 @@ class AppBlockerManager private constructor(private val context: Context) {
             scheduledAtMillis = currentState.scheduledAtMillis,
             scheduleActivated = currentState.scheduleActivated,
             excludeApps = mergedExcludeApps,
-            pausedUntilMillis = null
+            pausedUntilMillis = null,
+            windows = currentState.windows,
+            windowsPausedUntilMillis = currentState.windowsPausedUntilMillis
         )
         
         preferencesManager.saveState(state)
@@ -62,6 +65,20 @@ class AppBlockerManager private constructor(private val context: Context) {
         preferencesManager.saveState(currentState.copy(pausedUntilMillis = untilMillis))
     }
     
+    // Daily windows that block even while paused (focus hours). Writes state
+    // only, like pauseUntil; an empty list removes them.
+    fun setWindows(windows: List<BlockWindow>) {
+        val currentState = preferencesManager.loadState()
+        preferencesManager.saveState(currentState.copy(windows = windows))
+    }
+
+    // Lets the apps through the windows until untilMillis, then the windows
+    // block again on their own.
+    fun pauseWindowsUntil(untilMillis: Long) {
+        val currentState = preferencesManager.loadState()
+        preferencesManager.saveState(currentState.copy(windowsPausedUntilMillis = untilMillis))
+    }
+
     fun resume() {
         val currentState = preferencesManager.loadState()
         preferencesManager.saveState(currentState.copy(pausedUntilMillis = null))
@@ -104,7 +121,9 @@ class AppBlockerManager private constructor(private val context: Context) {
             scheduledTime = dateTime,
             scheduledAtMillis = scheduledAtMillis,
             scheduleActivated = scheduleActivated,
-            excludeApps = mergedExcludeApps
+            excludeApps = mergedExcludeApps,
+            windows = currentState.windows,
+            windowsPausedUntilMillis = currentState.windowsPausedUntilMillis
         )
         
         preferencesManager.saveState(state)
@@ -144,7 +163,7 @@ class AppBlockerManager private constructor(private val context: Context) {
     
     fun isBlocking(): Boolean {
         val state = getState()
-        if (state.isPausedAt(System.currentTimeMillis())) return false
+        if (state.isHeldOpenAt(System.currentTimeMillis())) return false
         return state.isBlocking || state.scheduleActivated
     }
     
