@@ -100,13 +100,13 @@ class PreferencesManager(context: Context) {
 
     private fun decodeWindows(json: String?): List<BlockWindow> {
         if (json.isNullOrEmpty()) return emptyList()
-        return runCatching {
-            val array = JSONArray(json)
-            (0 until array.length()).map { index ->
+        val array = runCatching { JSONArray(json) }.getOrNull() ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            runCatching {
                 val pair = array.getJSONArray(index)
                 BlockWindow(pair.getInt(0), pair.getInt(1))
-            }
-        }.getOrDefault(emptyList())
+            }.getOrNull()?.takeIf { it.isValid() }
+        }
     }
     
     fun saveOverlayConfig(config: OverlayConfig) {

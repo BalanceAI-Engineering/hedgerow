@@ -166,7 +166,9 @@ class BlockerService : Service() {
                 overlayController.hideOverlay()
                 lastBlockedPackage = null
             }
-            return minOf(PAUSED_POLLING_INTERVAL, state.pausedUntilMillis!! - now).coerceAtLeast(POLLING_INTERVAL)
+            val untilWindow = state.millisUntilNextWindowStart(now) ?: PAUSED_POLLING_INTERVAL
+            return minOf(PAUSED_POLLING_INTERVAL, state.pausedUntilMillis!! - now, untilWindow)
+                .coerceAtLeast(POLLING_INTERVAL)
         }
         
         if (!state.isBlocking && !state.scheduleActivated) {

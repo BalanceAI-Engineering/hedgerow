@@ -7,7 +7,13 @@ import java.util.Calendar
 data class BlockWindow(
     val startMinute: Int,
     val endMinute: Int
-)
+) {
+    fun isValid(): Boolean = startMinute in 0 until endMinute && endMinute <= MINUTES_PER_DAY
+
+    companion object {
+        const val MINUTES_PER_DAY = 1440
+    }
+}
 
 data class BlockerState(
     val isBlocking: Boolean = false,
@@ -30,9 +36,25 @@ data class BlockerState(
         return windows.any { minute >= it.startMinute && minute < it.endMinute }
     }
 
-    // A window holds the apps blocked through a pause.
+    // A window holds the apps blocked through a pause. Only that pause opens
+    // the apps: pausing the windows lets them through it, nothing more.
     fun isHeldOpenAt(nowMillis: Long): Boolean =
         isPausedAt(nowMillis) && !isInWindowAt(nowMillis)
+
+    // So a paused service wakes when the next window starts, not up to a poll
+    // interval later. Null with no windows.
+    fun millisUntilNextWindowStart(nowMillis: Long): Long? {
+        if (windows.isEmpty()) return null
+        val calendar = Calendar.getInstance().apply { timeInMillis = nowMillis }
+        val secondOfDay = calendar.get(Calendar.HOUR_OF_DAY) * 3600 +
+            calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.SECOND)
+        return windows.minOf { window ->
+            val startSecond = window.startMinute * 60
+            val wait = if (startSecond > secondOfDay) startSecond - secondOfDay
+            else startSecond + BlockWindow.MINUTES_PER_DAY * 60 - secondOfDay
+            wait.toLong() * 1000
+        }
+    }
 
     companion object {
         fun minuteOfDay(nowMillis: Long): Int {

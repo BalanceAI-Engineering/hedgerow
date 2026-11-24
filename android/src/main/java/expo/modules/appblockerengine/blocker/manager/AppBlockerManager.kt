@@ -73,7 +73,8 @@ class AppBlockerManager private constructor(private val context: Context) {
     }
 
     // Lets the apps through the windows until untilMillis, then the windows
-    // block again on their own.
+    // block again on their own. Only matters while the blocker is paused
+    // (pauseUntil): outside a pause the apps are blocked anyway.
     fun pauseWindowsUntil(untilMillis: Long) {
         val currentState = preferencesManager.loadState()
         preferencesManager.saveState(currentState.copy(windowsPausedUntilMillis = untilMillis))

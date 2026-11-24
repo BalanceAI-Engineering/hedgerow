@@ -49,7 +49,12 @@ class ExpoBlockerModule : Module() {
         }
         
         AsyncFunction("setWindows") { windows: List<List<Int>>, promise: Promise ->
-            appBlockerManager.setWindows(windows.map { BlockWindow(it[0], it[1]) })
+            val parsed = windows.map { BlockWindow(it.getOrElse(0) { -1 }, it.getOrElse(1) { -1 }) }
+            if (parsed.any { !it.isValid() }) {
+                promise.reject("WINDOW_ERROR", "Each window needs 0 <= startMinute < endMinute <= 1440", null)
+                return@AsyncFunction
+            }
+            appBlockerManager.setWindows(parsed)
             promise.resolve(mapOf("success" to true))
         }
 
