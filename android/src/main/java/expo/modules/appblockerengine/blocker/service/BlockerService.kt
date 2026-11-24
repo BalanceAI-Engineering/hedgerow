@@ -167,8 +167,15 @@ class BlockerService : Service() {
                 lastBlockedPackage = null
             }
             val untilWindow = state.millisUntilNextWindowStart(now) ?: PAUSED_POLLING_INTERVAL
-            return minOf(PAUSED_POLLING_INTERVAL, state.pausedUntilMillis!! - now, untilWindow)
-                .coerceAtLeast(POLLING_INTERVAL)
+            // A paused window blocks again when that pause ends.
+            val untilWindowPauseEnds = state.windowsPausedUntilMillis
+                ?.let { it - now }?.takeIf { it > 0 } ?: PAUSED_POLLING_INTERVAL
+            return minOf(
+                PAUSED_POLLING_INTERVAL,
+                state.pausedUntilMillis!! - now,
+                untilWindow,
+                untilWindowPauseEnds
+            ).coerceAtLeast(POLLING_INTERVAL)
         }
         
         if (!state.isBlocking && !state.scheduleActivated) {
