@@ -8,6 +8,7 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.appblockerengine.blocker.controller.ButtonClickReceiver
 import expo.modules.appblockerengine.blocker.controller.OverlayController
+import expo.modules.appblockerengine.blocker.model.BlockWindow
 
 class ExpoBlockerModule : Module() {
     
@@ -47,6 +48,21 @@ class ExpoBlockerModule : Module() {
             promise.resolve(mapOf("success" to true))
         }
         
+        AsyncFunction("setWindows") { windows: List<List<Int>>, promise: Promise ->
+            val parsed = windows.map { BlockWindow(it.getOrElse(0) { -1 }, it.getOrElse(1) { -1 }) }
+            if (parsed.any { !it.isValid() }) {
+                promise.reject("WINDOW_ERROR", "Each window needs 0 <= startMinute < endMinute <= 1440", null)
+                return@AsyncFunction
+            }
+            appBlockerManager.setWindows(parsed)
+            promise.resolve(mapOf("success" to true))
+        }
+
+        AsyncFunction("pauseWindowsUntil") { untilMillis: Double, promise: Promise ->
+            appBlockerManager.pauseWindowsUntil(untilMillis.toLong())
+            promise.resolve(mapOf("success" to true))
+        }
+
         AsyncFunction("resume") { promise: Promise ->
             appBlockerManager.resume()
             promise.resolve(mapOf("success" to true))
@@ -102,7 +118,9 @@ class ExpoBlockerModule : Module() {
                 "scheduledAtMillis" to state.scheduledAtMillis,
                 "scheduleActivated" to state.scheduleActivated,
                 "excludeApps" to state.excludeApps,
-                "pausedUntilMillis" to state.pausedUntilMillis
+                "pausedUntilMillis" to state.pausedUntilMillis,
+                "windows" to state.windows.map { mapOf("startMinute" to it.startMinute, "endMinute" to it.endMinute) },
+                "windowsPausedUntilMillis" to state.windowsPausedUntilMillis
             ))
         }
         

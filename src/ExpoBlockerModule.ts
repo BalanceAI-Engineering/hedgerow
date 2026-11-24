@@ -16,6 +16,8 @@ type ExpoBlockerNativeModule = {
   blockWithExclude(apps: string[] | null, excludeApps: string[]): Promise<{ success: boolean }>;
   clear(): Promise<{ success: boolean }>;
   pauseUntil(untilMillis: number): Promise<{ success: boolean }>;
+  setWindows(windows: [number, number][]): Promise<{ success: boolean }>;
+  pauseWindowsUntil(untilMillis: number): Promise<{ success: boolean }>;
   resume(): Promise<{ success: boolean }>;
   schedule(time: string): Promise<{ success: boolean }>;
   scheduleWithExclude(time: string, excludeApps: string[]): Promise<{ success: boolean }>;

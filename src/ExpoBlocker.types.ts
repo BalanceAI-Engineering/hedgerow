@@ -7,6 +7,14 @@ export interface BlockerState {
   scheduleActivated: boolean;
   excludeApps: string[];
   pausedUntilMillis: number | null;
+  windows: BlockWindow[];
+  windowsPausedUntilMillis: number | null;
+}
+
+// Minutes after local midnight; endMinute is exclusive and 1440 is midnight.
+export interface BlockWindow {
+  startMinute: number;
+  endMinute: number;
 }
 
 export interface PermissionStatus {

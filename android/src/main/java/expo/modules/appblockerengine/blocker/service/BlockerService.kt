@@ -161,12 +161,21 @@ class BlockerService : Service() {
         val state = preferencesManager.loadState()
         val now = System.currentTimeMillis()
         
-        if (state.isPausedAt(now)) {
+        if (state.isHeldOpenAt(now)) {
             if (overlayController.isOverlayShowing()) {
                 overlayController.hideOverlay()
                 lastBlockedPackage = null
             }
-            return minOf(PAUSED_POLLING_INTERVAL, state.pausedUntilMillis!! - now).coerceAtLeast(POLLING_INTERVAL)
+            val untilWindow = state.millisUntilNextWindowStart(now) ?: PAUSED_POLLING_INTERVAL
+            // A paused window blocks again when that pause ends.
+            val untilWindowPauseEnds = state.windowsPausedUntilMillis
+                ?.let { it - now }?.takeIf { it > 0 } ?: PAUSED_POLLING_INTERVAL
+            return minOf(
+                PAUSED_POLLING_INTERVAL,
+                state.pausedUntilMillis!! - now,
+                untilWindow,
+                untilWindowPauseEnds
+            ).coerceAtLeast(POLLING_INTERVAL)
         }
         
         if (!state.isBlocking && !state.scheduleActivated) {
